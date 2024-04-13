@@ -26,6 +26,7 @@
     "dialect"
   ],
   "scripts": {
+    "test": "pnpm vitest",
     "build": "tsup && node ./scripts/dist-fix.js",
     "clean": "rm -rf dist",
     "fmt": "prettier --write .",
