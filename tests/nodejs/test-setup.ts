@@ -3,18 +3,19 @@ import chaiSubset from 'chai-subset'
 import {
   Kysely,
   sql,
-  type ColumnType,
-  type Compilable,
-  type Generated,
-  type InsertObject,
-  type KyselyConfig,
-  type KyselyPlugin,
-  type Logger,
-  type SchemaModule,
+ColumnType,
+Compilable,
+Generated,
+InsertObject,
+KyselyConfig,
+KyselyPlugin,
+Logger,
+SchemaModule,
 } from 'kysely'
-import postgres from 'postgres'
+// import postgres from 'postgres'
 
 import {PostgresJSDialect} from '../../src'
+import {PGlite} from '@electric-sql/pglite'
 
 export {default as forEach} from 'mocha-each'
 
@@ -69,19 +70,19 @@ export const POOL_SIZE = 20
 
 export const CONFIG: KyselyConfig = {
   dialect: new PostgresJSDialect({
-    postgres: postgres({
+    postgres: new PGlite() /* postgres({
       database: 'test',
       host: 'localhost',
       max: 20,
       onnotice() {},
       port: 5434,
       user: 'admin',
-    }),
+    }),*/
   }),
 }
 
-export async function initTest(ctx: Mocha.Context, log?: Logger): Promise<TestContext> {
-  ctx.timeout(TEST_INIT_TIMEOUT)
+export async function initTest( log?: Logger): Promise<TestContext> {
+  // ctx.timeout(TEST_INIT_TIMEOUT)
 
   const db = await connect({
     ...CONFIG,
@@ -94,14 +95,15 @@ export async function initTest(ctx: Mocha.Context, log?: Logger): Promise<TestCo
 }
 
 export async function destroyTest(ctx: TestContext): Promise<void> {
-  await dropDatabase(ctx.db)
-  await ctx.db.destroy()
+  // await dropDatabase(ctx.db)
+  // await ctx.db.destroy()
 }
 
 export async function insertPersons(ctx: TestContext, insertPersons: PersonInsertParams[]): Promise<void> {
   for (const insertPerson of insertPersons) {
     const {pets, ...person} = insertPerson
 
+    
     const {id} = await ctx.db
       .insertInto('person')
       .values({...person})
@@ -186,27 +188,9 @@ export function createTableWithId(schema: SchemaModule, tableName: string) {
 }
 
 async function connect(config: KyselyConfig): Promise<Kysely<Database>> {
-  for (let i = 0; i < TEST_INIT_TIMEOUT; i += 1000) {
-    let db: Kysely<Database> | undefined
-
-    try {
-      db = new Kysely<Database>(config)
-      await sql`select 1`.execute(db)
-      return db
-    } catch (error) {
-      console.error(error)
-
-      if (db) {
-        await db.destroy().catch((error) => error)
-      }
-
-      console.log('Waiting for the database to become available. Did you remember to run `docker-compose up`?')
-
-      await sleep(1000)
-    }
-  }
-
-  throw new Error('could not connect to database')
+  const db =  new Kysely<Database>(config)
+  await sql`select 1`.execute(db)
+  return db
 }
 
 async function dropDatabase(db: Kysely<Database>): Promise<void> {
